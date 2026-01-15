@@ -1,0 +1,9 @@
+[package]
+name = "remove-non-ascii"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced = { version = "0.14.0", features = ["advanced"] }
+open = "5.3.3"
+rfd = "0.17.2"

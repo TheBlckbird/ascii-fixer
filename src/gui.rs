@@ -1,0 +1,191 @@
+use std::path::PathBuf;
+
+use iced::{
+    Alignment::Center,
+    Color, Element, Length,
+    widget::{
+        bottom_right, button, center, column, container, mouse_area, opaque, rich_text, row, span,
+        stack, text,
+    },
+};
+use rfd::FileDialog;
+
+use crate::fix_file::{FixFileError, fix_file};
+
+#[derive(Debug, Clone)]
+enum Message {
+    PickFiles,
+    FixFiles,
+    ShowFixFilesDialog,
+    HideFixFilesDialog,
+    HideErrorModal,
+    LinkClicked(String),
+}
+
+#[derive(Default)]
+struct AsciiFixer {
+    files: Vec<PathBuf>,
+    show_dialog: bool,
+    error_modal: Option<String>,
+}
+
+impl AsciiFixer {
+    fn update(&mut self, message: Message) {
+        match message {
+            Message::PickFiles => {
+                let files = FileDialog::new().pick_files_or_folders();
+
+                if let Some(files) = files {
+                    self.files = files;
+                }
+            }
+            Message::FixFiles => {
+                for file in &self.files {
+                    if let Err(error) = fix_file(file) {
+                        match error {
+                            FixFileError::Io(error) => {
+                                self.error_modal = Some(format!(
+                                    "Es ist ein Fehler bei dem Schreiben oder Lesen der Datei '{}' aufgetreten:\n{error}",
+                                    file.display(),
+                                ))
+                            }
+                            FixFileError::InvalidFilename => {
+                                self.error_modal =
+                                    Some(format!("Pfad '{}' existiert nicht", file.display()))
+                            }
+                        }
+                    }
+                }
+
+                self.files.clear();
+
+                self.show_dialog = false;
+            }
+            Message::ShowFixFilesDialog => self.show_dialog = true,
+            Message::HideFixFilesDialog => self.show_dialog = false,
+            Message::HideErrorModal => self.error_modal = None,
+            Message::LinkClicked(link) => {
+                let _ = open::that(link);
+            }
+        }
+    }
+
+    fn view(&self) -> Element<'_, Message> {
+        let first_file = text(match self.files.len() {
+            0 => "Keine Dateien ausgewählt".to_string(),
+            _ => {
+                let mut list = String::new();
+
+                for (index, file) in self.files.iter().enumerate() {
+                    list.push_str(file.to_str().unwrap_or("Kann Dateipfad nicht darstellen"));
+
+                    if index + 1 != self.files.len() {
+                        list.push('\n');
+                    }
+                }
+
+                list.to_string()
+            }
+        });
+
+        let base_interface = container(
+            column![
+                column![
+                    button("Pick files").on_press(Message::PickFiles),
+                    first_file,
+                    button("Fix Files").on_press(Message::ShowFixFilesDialog),
+                ]
+                .padding(13)
+                .spacing(40)
+                .align_x(Center),
+                bottom_right(
+                    rich_text![span("© Louis Weigel").link("https://louisweigel.com".to_string())]
+                        .on_link_click(Message::LinkClicked)
+                ),
+            ]
+            .padding(7)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(Center),
+        );
+
+        if self.show_dialog {
+            if self.files.is_empty() {
+                let information_modal = container(
+                    column![
+                        text("Du hast keine Dateien ausgewählt\n").align_x(Center),
+                        row![button("Ok").on_press(Message::HideFixFilesDialog)].spacing(30)
+                    ]
+                    .align_x(Center),
+                );
+
+                modal(
+                    base_interface,
+                    information_modal,
+                    Message::HideFixFilesDialog,
+                )
+            } else {
+                let confirmation_dialog = container(column![
+                    text("Willst du das wirklich durchführen?\nDiese Aktion wird alle ausgewählten Dateien überschreiben!\n").align_x(Center),
+                    row![
+                        button("Abbrechen").on_press(Message::HideFixFilesDialog),
+                        button("Fortfahren").on_press(Message::FixFiles)
+                    ].spacing(30)
+                ].align_x(Center));
+
+                modal(
+                    base_interface,
+                    confirmation_dialog,
+                    Message::HideFixFilesDialog,
+                )
+            }
+        } else if let Some(error_modal_content) = &self.error_modal {
+            let information_modal = container(
+                column![
+                    text(format!("{error_modal_content}\n")).align_x(Center),
+                    row![button("Ok").on_press(Message::HideErrorModal)].spacing(30)
+                ]
+                .align_x(Center),
+            );
+
+            modal(base_interface, information_modal, Message::HideErrorModal)
+        } else {
+            base_interface.into()
+        }
+    }
+}
+
+pub fn show_gui() -> iced::Result {
+    iced::application(AsciiFixer::default, AsciiFixer::update, AsciiFixer::view)
+        .title("Ascii Fixer")
+        .run()
+}
+
+fn modal<'a, Message>(
+    base: impl Into<Element<'a, Message>>,
+    content: impl Into<Element<'a, Message>>,
+    on_blur: Message,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a,
+{
+    stack![
+        base.into(),
+        opaque(
+            mouse_area(center(opaque(content)).style(|_theme| {
+                container::Style {
+                    background: Some(
+                        Color {
+                            a: 0.8,
+                            ..Color::BLACK
+                        }
+                        .into(),
+                    ),
+                    ..container::Style::default()
+                }
+            }))
+            .on_press(on_blur)
+        )
+    ]
+    .into()
+}
