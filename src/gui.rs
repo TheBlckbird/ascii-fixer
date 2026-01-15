@@ -1,12 +1,10 @@
 use std::path::PathBuf;
 
 use iced::{
-    Alignment::Center,
-    Color, Element, Length,
     widget::{
         bottom_right, button, center, column, container, mouse_area, opaque, rich_text, row, span,
         stack, text,
-    },
+    }, window::{self, icon}, Alignment::Center, Color, Element, Length
 };
 use rfd::FileDialog;
 
@@ -33,7 +31,11 @@ impl AsciiFixer {
     fn update(&mut self, message: Message) {
         match message {
             Message::PickFiles => {
+                #[cfg(target_os = "macos")]
                 let files = FileDialog::new().pick_files_or_folders();
+
+                #[cfg(not(target_os = "macos"))]
+                let files = FileDialog::new().pick_files();
 
                 if let Some(files) = files {
                     self.files = files;
@@ -156,8 +158,14 @@ impl AsciiFixer {
 }
 
 pub fn show_gui() -> iced::Result {
+    let window_settings = window::Settings {
+        icon: Some(icon::from_file_data(include_bytes!("../build/icon1024.png"), None).expect("Icon should be valid")),
+        ..window::Settings::default()
+    };
+
     iced::application(AsciiFixer::default, AsciiFixer::update, AsciiFixer::view)
-        .title("Ascii Fixer")
+        .title("ASCII Fixer")
+        .window(window_settings)
         .run()
 }
 
