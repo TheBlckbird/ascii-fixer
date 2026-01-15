@@ -93,9 +93,9 @@ impl AsciiFixer {
         let base_interface = container(
             column![
                 column![
-                    button("Pick files").on_press(Message::PickFiles),
+                    button("Dateien auswählen").on_press(Message::PickFiles),
                     first_file,
-                    button("Fix Files").on_press(Message::ShowFixFilesDialog),
+                    button("Dateien fixen").on_press(Message::ShowFixFilesDialog),
                 ]
                 .padding(13)
                 .spacing(40)
