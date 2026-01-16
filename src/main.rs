@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use crate::gui::show_gui;
 
 mod gui;
