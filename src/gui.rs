@@ -5,8 +5,8 @@ use iced::{
     Color, Element,
     Length::{self, Fill},
     widget::{
-        Space, bottom, button, center, column, container, mouse_area, opaque,
-        rich_text, row, span, stack, text,
+        Space, bottom, button, center, column, container, mouse_area, opaque, rich_text, row, span,
+        stack, text,
     },
     window::{self, icon},
 };
@@ -29,6 +29,7 @@ struct AsciiFixer {
     files: Vec<PathBuf>,
     show_dialog: bool,
     error_modals: Vec<String>,
+    is_finished: bool,
 }
 
 impl AsciiFixer {
@@ -44,6 +45,8 @@ impl AsciiFixer {
                 if let Some(files) = files {
                     self.files = files;
                 }
+
+                self.is_finished = false;
             }
             Message::FixFiles => {
                 for file in &self.files {
@@ -65,6 +68,7 @@ impl AsciiFixer {
                 self.files.clear();
 
                 self.show_dialog = false;
+                self.is_finished = true;
             }
             Message::ShowFixFilesDialog => self.show_dialog = true,
             Message::HideFixFilesDialog => self.show_dialog = false,
@@ -77,7 +81,7 @@ impl AsciiFixer {
 
     fn view(&self) -> Element<'_, Message> {
         let first_file = text(match self.files.len() {
-            0 => "Keine Dateien ausgewählt".to_string(),
+            0 => if self.is_finished { "Fertig!".to_string() } else {"Keine Dateien ausgewählt".to_string()},
             _ => {
                 let mut list = String::new();
 
