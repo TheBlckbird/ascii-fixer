@@ -1,10 +1,13 @@
 use std::path::PathBuf;
 
 use iced::{
+    Alignment::Center,
+    Color, Element, Length,
     widget::{
         bottom_right, button, center, column, container, mouse_area, opaque, rich_text, row, span,
         stack, text,
-    }, window::{self, icon}, Alignment::Center, Color, Element, Length
+    },
+    window::{self, icon},
 };
 use rfd::FileDialog;
 
@@ -24,7 +27,7 @@ enum Message {
 struct AsciiFixer {
     files: Vec<PathBuf>,
     show_dialog: bool,
-    error_modal: Option<String>,
+    error_modals: Vec<String>,
 }
 
 impl AsciiFixer {
@@ -46,15 +49,14 @@ impl AsciiFixer {
                     if let Err(error) = fix_file(file) {
                         match error {
                             FixFileError::Io(error) => {
-                                self.error_modal = Some(format!(
+                                self.error_modals.push(format!(
                                     "Es ist ein Fehler bei dem Schreiben oder Lesen der Datei '{}' aufgetreten:\n{error}",
                                     file.display(),
-                                ))
+                                ));
                             }
-                            FixFileError::InvalidFilename => {
-                                self.error_modal =
-                                    Some(format!("Pfad '{}' existiert nicht", file.display()))
-                            }
+                            FixFileError::InvalidFilename => self
+                                .error_modals
+                                .push(format!("Pfad '{}' existiert nicht", file.display())),
                         }
                     }
                 }
@@ -65,7 +67,7 @@ impl AsciiFixer {
             }
             Message::ShowFixFilesDialog => self.show_dialog = true,
             Message::HideFixFilesDialog => self.show_dialog = false,
-            Message::HideErrorModal => self.error_modal = None,
+            Message::HideErrorModal => self.error_modals.clear(),
             Message::LinkClicked(link) => {
                 let _ = open::that(link);
             }
@@ -141,10 +143,10 @@ impl AsciiFixer {
                     Message::HideFixFilesDialog,
                 )
             }
-        } else if let Some(error_modal_content) = &self.error_modal {
+        } else if !self.error_modals.is_empty() {
             let information_modal = container(
                 column![
-                    text(format!("{error_modal_content}\n")).align_x(Center),
+                    text(format!("{}\n", self.error_modals.join("\n"))).align_x(Center),
                     row![button("Ok").on_press(Message::HideErrorModal)].spacing(30)
                 ]
                 .align_x(Center),
@@ -159,7 +161,10 @@ impl AsciiFixer {
 
 pub fn show_gui() -> iced::Result {
     let window_settings = window::Settings {
-        icon: Some(icon::from_file_data(include_bytes!("../build/icon1024.png"), None).expect("Icon should be valid")),
+        icon: Some(
+            icon::from_file_data(include_bytes!("../build/icon1024.png"), None)
+                .expect("Icon should be valid"),
+        ),
         ..window::Settings::default()
     };
 
