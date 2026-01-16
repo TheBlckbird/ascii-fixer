@@ -2,10 +2,11 @@ use std::path::PathBuf;
 
 use iced::{
     Alignment::Center,
-    Color, Element, Length,
+    Color, Element,
+    Length::{self, Fill},
     widget::{
-        bottom_right, button, center, column, container, mouse_area, opaque, rich_text, row, span,
-        stack, text,
+        Space, bottom, button, center, column, container, mouse_area, opaque,
+        rich_text, row, span, stack, text,
     },
     window::{self, icon},
 };
@@ -102,10 +103,17 @@ impl AsciiFixer {
                 .padding(13)
                 .spacing(40)
                 .align_x(Center),
-                bottom_right(
-                    rich_text![span("© Louis Weigel").link("https://louisweigel.com".to_string())]
+                bottom(
+                    row![
+                        text(format!("v{}", env!("CARGO_PKG_VERSION"))),
+                        Space::new().width(Fill),
+                        rich_text![
+                            span("© Louis Weigel").link("https://louisweigel.com".to_string())
+                        ]
                         .on_link_click(Message::LinkClicked)
-                ),
+                    ]
+                    .width(Fill)
+                )
             ]
             .padding(7)
             .width(Length::Fill)
