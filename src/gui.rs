@@ -109,7 +109,10 @@ impl AsciiFixer {
                 .align_x(Center),
                 bottom(
                     row![
-                        text(format!("v{}", env!("CARGO_PKG_VERSION"))),
+                        rich_text![
+                            span(format!("v{}", env!("CARGO_PKG_VERSION"))).link("https://github.com/TheBlckbird/ascii-fixer/releases/latest".to_string())
+                        ]
+                        .on_link_click(Message::LinkClicked),
                         Space::new().width(Fill),
                         rich_text![
                             span("© Louis Weigel").link("https://louisweigel.com".to_string())
