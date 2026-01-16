@@ -207,6 +207,9 @@ where
                         }
                         .into(),
                     ),
+                    text_color: Some(
+                        Color::WHITE
+                    ),
                     ..container::Style::default()
                 }
             }))
