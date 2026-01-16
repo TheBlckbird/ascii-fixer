@@ -170,7 +170,7 @@ impl AsciiFixer {
 pub fn show_gui() -> iced::Result {
     let window_settings = window::Settings {
         icon: Some(
-            icon::from_file_data(include_bytes!("../build/icon1024.png"), None)
+            icon::from_file_data(include_bytes!("../assets/icon1024.png"), None)
                 .expect("Icon should be valid"),
         ),
         ..window::Settings::default()
