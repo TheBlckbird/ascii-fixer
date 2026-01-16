@@ -179,6 +179,7 @@ pub fn show_gui() -> iced::Result {
     iced::application(AsciiFixer::default, AsciiFixer::update, AsciiFixer::view)
         .title("ASCII Fixer")
         .window(window_settings)
+        .window_size((800, 500))
         .run()
 }
 
