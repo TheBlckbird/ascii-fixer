@@ -6,7 +6,7 @@ TEMP_DIR="../temp"
 OUT_DIR="../out"
 APP_NAME="ASCII Fixer"
 RUST_CRATE_NAME="ascii-fixer"
-APP_ICON="./icon1024.png"
+APP_ICON="../assets/icon1024.png"
 
 rm -rf "${TEMP_DIR}"
 
