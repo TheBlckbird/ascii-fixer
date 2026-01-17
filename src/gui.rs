@@ -3,10 +3,10 @@ use std::path::PathBuf;
 use iced::{
     Alignment::Center,
     Color, Element,
-    Length::{self, Fill},
+    Length::{Fill, Shrink},
     widget::{
-        Space, bottom, button, center, column, container, mouse_area, opaque, rich_text, row, span,
-        stack, text,
+        Space, bottom, button, center, column, container, mouse_area, opaque, rich_text, row,
+        scrollable, span, stack, text,
     },
     window::{self, icon},
 };
@@ -93,7 +93,7 @@ impl AsciiFixer {
                 "Keine Dateien ausgewählt".to_string()
             })),
             _ => {
-                let mut column = column![].spacing(5);
+                let mut column = column![].spacing(5).padding(12);
 
                 for file in self.files.iter() {
                     column = column.push(
@@ -106,7 +106,7 @@ impl AsciiFixer {
                     );
                 }
 
-                container(column)
+                container(scrollable(column).height(Fill))
             }
         };
 
@@ -119,6 +119,7 @@ impl AsciiFixer {
                 ]
                 .padding(13)
                 .spacing(40)
+                .height(Fill)
                 .align_x(Center),
                 bottom(
                     row![
@@ -137,10 +138,11 @@ impl AsciiFixer {
                     ]
                     .width(Fill)
                 )
+                .height(Shrink)
             ]
             .padding(7)
-            .width(Length::Fill)
-            .height(Length::Fill)
+            .width(Fill)
+            .height(Fill)
             .align_x(Center),
         );
 
