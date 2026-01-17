@@ -98,7 +98,9 @@ impl AsciiFixer {
                 for file in self.files.iter() {
                     column = column.push(
                         row![
-                            button("X").on_press(Message::RemoveFile(file.to_path_buf())),
+                            button("X")
+                                .on_press(Message::RemoveFile(file.to_path_buf()))
+                                .style(button::danger),
                             text(file.to_str().unwrap_or("Kann Dateipfad nicht darstellen")),
                         ]
                         .spacing(10)
