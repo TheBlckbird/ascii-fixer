@@ -22,6 +22,7 @@ enum Message {
     HideFixFilesDialog,
     HideErrorModal,
     LinkClicked(String),
+    RemoveFile(PathBuf),
 }
 
 #[derive(Default)]
@@ -76,32 +77,44 @@ impl AsciiFixer {
             Message::LinkClicked(link) => {
                 let _ = open::that(link);
             }
+            Message::RemoveFile(file_remove) => {
+                if let Some(position) = self.files.iter().position(|file| *file == file_remove) {
+                    self.files.remove(position);
+                }
+            }
         }
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let first_file = text(match self.files.len() {
-            0 => if self.is_finished { "Fertig!".to_string() } else {"Keine Dateien ausgewählt".to_string()},
+        let files_list = match self.files.len() {
+            0 => container(text(if self.is_finished {
+                "Fertig!".to_string()
+            } else {
+                "Keine Dateien ausgewählt".to_string()
+            })),
             _ => {
-                let mut list = String::new();
+                let mut column = column![].spacing(5);
 
-                for (index, file) in self.files.iter().enumerate() {
-                    list.push_str(file.to_str().unwrap_or("Kann Dateipfad nicht darstellen"));
-
-                    if index + 1 != self.files.len() {
-                        list.push('\n');
-                    }
+                for file in self.files.iter() {
+                    column = column.push(
+                        row![
+                            button("X").on_press(Message::RemoveFile(file.to_path_buf())),
+                            text(file.to_str().unwrap_or("Kann Dateipfad nicht darstellen")),
+                        ]
+                        .spacing(10)
+                        .align_y(Center),
+                    );
                 }
 
-                list.to_string()
+                container(column)
             }
-        });
+        };
 
         let base_interface = container(
             column![
                 column![
                     button("Dateien auswählen").on_press(Message::PickFiles),
-                    first_file,
+                    files_list,
                     button("Dateien fixen").on_press(Message::ShowFixFilesDialog),
                 ]
                 .padding(13)
@@ -110,7 +123,10 @@ impl AsciiFixer {
                 bottom(
                     row![
                         rich_text![
-                            span(format!("v{}", env!("CARGO_PKG_VERSION"))).link("https://github.com/TheBlckbird/ascii-fixer/releases/latest".to_string())
+                            span(format!("v{}", env!("CARGO_PKG_VERSION"))).link(
+                                "https://github.com/TheBlckbird/ascii-fixer/releases/latest"
+                                    .to_string()
+                            )
                         ]
                         .on_link_click(Message::LinkClicked),
                         Space::new().width(Fill),
@@ -210,9 +226,7 @@ where
                         }
                         .into(),
                     ),
-                    text_color: Some(
-                        Color::WHITE
-                    ),
+                    text_color: Some(Color::WHITE),
                     ..container::Style::default()
                 }
             }))
