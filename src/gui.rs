@@ -17,12 +17,14 @@ use crate::fix_file::{FixFileError, fix_file};
 #[derive(Debug, Clone)]
 enum Message {
     PickFiles,
+    PickFolders,
     FixFiles,
     ShowFixFilesDialog,
     HideFixFilesDialog,
     HideErrorModal,
     LinkClicked(String),
     RemoveFile(PathBuf),
+    RemoveAll,
 }
 
 #[derive(Default)]
@@ -43,12 +45,14 @@ impl AsciiFixer {
                 #[cfg(not(target_os = "macos"))]
                 let files = FileDialog::new().pick_files();
 
-                if let Some(files) = files {
-                    self.files = files;
-                }
-
-                self.is_finished = false;
+                self.add_files(files);
             }
+
+            Message::PickFolders => {
+                let folders = FileDialog::new().pick_folders();
+                self.add_files(folders);
+            }
+
             Message::FixFiles => {
                 for file in &self.files {
                     if let Err(error) = fix_file(file) {
@@ -71,18 +75,31 @@ impl AsciiFixer {
                 self.show_dialog = false;
                 self.is_finished = true;
             }
+
             Message::ShowFixFilesDialog => self.show_dialog = true,
             Message::HideFixFilesDialog => self.show_dialog = false,
             Message::HideErrorModal => self.error_modals.clear(),
+
             Message::LinkClicked(link) => {
                 let _ = open::that(link);
             }
+
             Message::RemoveFile(file_remove) => {
                 if let Some(position) = self.files.iter().position(|file| *file == file_remove) {
                     self.files.remove(position);
                 }
             }
+
+            Message::RemoveAll => self.files.clear(),
         }
+    }
+
+    fn add_files(&mut self, files: Option<Vec<PathBuf>>) {
+        if let Some(mut files) = files {
+            self.files.append(&mut files);
+        }
+
+        self.is_finished = false;
     }
 
     fn view(&self) -> Element<'_, Message> {
@@ -112,10 +129,29 @@ impl AsciiFixer {
             }
         };
 
+        let select_files = if cfg!(target_os = "macos") {
+            container(button("Dateien auswählen").on_press(Message::PickFiles))
+        } else {
+            container(
+                row![
+                    button("Dateien auswählen").on_press(Message::PickFiles),
+                    button("Ordner auswählen").on_press(Message::PickFolders)
+                ]
+                .spacing(10),
+            )
+        };
+
         let base_interface = container(
             column![
                 column![
-                    button("Dateien auswählen").on_press(Message::PickFiles),
+                    column![
+                        select_files,
+                        button("Auswahl leeren")
+                            .style(button::danger)
+                            .on_press(Message::RemoveAll),
+                    ]
+                    .spacing(10)
+                    .align_x(Center),
                     files_list,
                     button("Dateien fixen").on_press(Message::ShowFixFilesDialog),
                 ]
