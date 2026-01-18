@@ -12,7 +12,10 @@ use iced::{
 };
 use rfd::FileDialog;
 
-use crate::fix_file::{FixFileError, fix_file};
+use crate::{
+    fix_file::{FixFileError, fix_file},
+    strip_home::path_to_human_readable,
+};
 
 #[derive(Debug, Clone)]
 enum Message {
@@ -118,7 +121,7 @@ impl AsciiFixer {
                             button("X")
                                 .on_press(Message::RemoveFile(file.to_path_buf()))
                                 .style(button::danger),
-                            text(file.to_str().unwrap_or("Kann Dateipfad nicht darstellen")),
+                            text(path_to_human_readable(file)),
                         ]
                         .spacing(10)
                         .align_y(Center),
